@@ -1,6 +1,6 @@
 {
   "name": "react-hooks-async-handlers",
-  "version": "0.0.1-rc.2",
+  "version": "0.0.1",
   "main": "index.js",
   "types": "./index.d.ts",
   "scripts": {
@@ -8,6 +8,12 @@
     "postpublish": "npm run clean",
     "clean": "npx module-kit-clean"
   },
+  "keywords": [
+    "react",
+    "react-native",
+    "react-hooks",
+    "async"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/zvs001/react-hooks-async-handlers"

@@ -24,7 +24,7 @@ Look example of usage for 2 types of handlers.
 ```tsx
 import { useAsyncHandler, useAsyncFetch } from 'react-hooks-async-handlers'
 
-// auto
+// automatically executed on mount
 const fetchAction = useAsyncFetch(async () => {
     await api.getUser()
 })
@@ -34,9 +34,7 @@ const deleteAction = useAsyncHandler(async () => {
     await api.deleteUser()
 })
 
-const handleClick = () => deleteAction.execute()
-
-return <button onClick={handleDelete}>delete</button>
+return <button onClick={() => deleteAction.execute()}>delete</button>
 ```
 
 
@@ -90,42 +88,43 @@ Composition example using: api, redux, react-renderer-status-split
 import { RendererStatusSplit } from 'react-renderer-status-split'
 import { useAsyncFetch } from 'react-hooks-async-handlers'
 
-// Component =>>
 
-const { pageObject } = useSelector((state) => ({
-  pageObject: state.pageObject,
-}))
-
-const dispatch = useDispatch()
-const fetchAction = useAsyncFetch(
-  async () => {
-    await dispatch(Dispatcher.getPageObject())
-  },
-  { maxTries: 3 },
-)
+function MyComponent() {
+  const dispatch = useDispatch()
+  const { pageObject } = useSelector((state) => ({
+    pageObject: state.pageObject,
+  }))
   
-return (
-  <div>
-    <h1>Page Title</h1>
-
-    <div className={'some-container'}>
-      <RendererStatusSplit
-        statuses={fetchAction}
-        isEmpty={_.isEmpty(offices)}
-        renderPreview={() => <div>Loading will start soon</div>}
-        renderLoading={() => <div>Component is loading</div>}
-        renderError={(error) => <span color={'red'}>{error}</span>}
-        renderEmpty={() => <div>Component is not found</div>}
-        render={() => <ComponentInfo data={pageObject} />}
-      />
+  const fetchAction = useAsyncFetch(
+    async () => {
+      await dispatch(Dispatcher.getPageObject())
+    },
+    { maxTries: 3 },
+  )
+    
+  return (
+    <div>
+      <h1>Page Title</h1>
+  
+      <div className={'content-container'}>
+        <RendererStatusSplit
+          statuses={fetchAction}
+          isEmpty={_.isEmpty(pageObject)}
+          renderPreview={() => <div>Loading will start soon</div>}
+          renderLoading={() => <div>Component is loading</div>}
+          renderError={(error) => <span color={'red'}>{error}</span>}
+          renderEmpty={() => <div>Component is not found</div>}
+          render={() => <ComponentInfo data={pageObject} />}
+        />
+      </div>
     </div>
-  </div>
-)
+  ) 
+}
 ```
 
 
 ## See Also
 
-List of libraries hook works well with:
+List of libraries that work well with hook:
 
 - [react-renderer-status-split](https://www.npmjs.com/package/react-renderer-status-split)
