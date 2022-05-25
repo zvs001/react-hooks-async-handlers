@@ -32,14 +32,14 @@ function useAsyncHandler<ActionResult>(
   onAction: () => Promise<ActionResult>,
   options?: UseActionHandlerOptions,
 ): {
-    execute: () => Promise<ActionResult>
+  execute: () => Promise<ActionResult>
 } & UseActionHandlerHookData<ActionResult>
 
 function useAsyncHandler<ActionResult, Param>(
   onAction: (param: Param) => Promise<ActionResult>,
   options?: UseActionHandlerOptions,
 ): {
-    execute: typeof onAction
+  execute: typeof onAction
 } & UseActionHandlerHookData<ActionResult>
 
 // todo test if it make sense to merge useState into one object.
@@ -50,7 +50,7 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
   const [data, setData] = useState<unknown>(null)
   const { error, setError } = useError(options)
 
-  const handleActionMemoized = useCallback(
+  const handleAction = useCallback(
     async (actionParam?: any) => {
       if (isDone && !isRetryAllowed && strict) {
         console.warn('Action is blocked because isDone is true. Async action is ignored. Possible leak detected.')
@@ -78,7 +78,7 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
   )
 
   const reset = useCallback(
-    function reset() {
+    function resetFn() {
       if (isLoading) {
         // why it is not firing? Even if loading is true already
         console.warn('You are using .reset() during active action. Some data can be overwritten')
@@ -92,7 +92,7 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
   )
 
   return {
-    execute: handleActionMemoized,
+    execute: handleAction,
     isLoading,
     isDone,
     error,

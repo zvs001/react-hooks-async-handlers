@@ -26,12 +26,12 @@ import { useAsyncHandler, useAsyncFetch } from 'react-hooks-async-handlers'
 
 // automatically executed on mount
 const fetchAction = useAsyncFetch(async () => {
-    await api.getUser()
+  await api.getUser()
 })
 
 // manual execute
 const deleteAction = useAsyncHandler(async () => {
-    await api.deleteUser()
+  await api.deleteUser()
 })
 
 return <button onClick={() => deleteAction.execute()}>delete</button>
@@ -54,13 +54,13 @@ Example:
 import { useAsyncHandler } from 'react-hooks-async-handlers'
 
 const createAction = useAsyncHandler(async () => {
-   await api.createObject()
+  await api.createObject()
 })
 const { isLoading, isDone, execute, error } = createAction
 
-if(isLoading) return 'action in progress'
-if(error) return `error happened: ${error}`
-if(isDone) return 'action completed successfully'
+if (isLoading) return 'action in progress'
+if (error) return `error happened: ${error}`
+if (isDone) return 'action completed successfully'
 
 return <div onClick={execute}>click</div>
 ```
@@ -88,18 +88,18 @@ Composition example using: api, redux, react-renderer-status-split
 import { RendererStatusSplit } from 'react-renderer-status-split'
 import { useAsyncFetch } from 'react-hooks-async-handlers'
 
-
-function MyComponent() {
+function UserComponent({ user_id }) {
   const dispatch = useDispatch()
-  const { pageObject } = useSelector((state) => ({
-    pageObject: state.pageObject,
+  const { user } = useSelector((state) => ({
+    user: state.users[user_id],
   }))
   
-  const fetchAction = useAsyncFetch(
+  const userFetch = useAsyncFetch(
     async () => {
-      await dispatch(Dispatcher.getPageObject())
+      await dispatch(Dispatcher.getUser(user_id))
     },
     { maxTries: 3 },
+    [user_id] // action will run again if user_id will be changed.
   )
     
   return (
@@ -108,13 +108,13 @@ function MyComponent() {
   
       <div className={'content-container'}>
         <RendererStatusSplit
-          statuses={fetchAction}
-          isEmpty={_.isEmpty(pageObject)}
+          statuses={userFetch}
+          isEmpty={!user}
           renderPreview={() => <div>Loading will start soon</div>}
           renderLoading={() => <div>Component is loading</div>}
           renderError={(error) => <span color={'red'}>{error}</span>}
           renderEmpty={() => <div>Component is not found</div>}
-          render={() => <ComponentInfo data={pageObject} />}
+          render={() => <UserInfo user={user} />}
         />
       </div>
     </div>
