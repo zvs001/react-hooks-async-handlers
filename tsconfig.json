@@ -1,3 +1,6 @@
 {
-  "extends": "module-kit/tsconfig"
+  "extends": "module-kit/tsconfig",
+  "compilerOptions": {
+    "esModuleInterop": true
+  }
 }

@@ -14,9 +14,11 @@ export interface UseErrorOptions {
 function useError(options?: UseErrorOptions) {
   const { processError = processErrorGlobal } = options || {}
   const [errorMessage, setErrorMessage] = useState('')
+  const [isErrored, setIsErrored] = useState(false)
 
   function resetError() {
     setErrorMessage('')
+    setIsErrored(false)
   }
 
   function setError(error: Error | null | string | unknown) {
@@ -24,9 +26,10 @@ function useError(options?: UseErrorOptions) {
     if (typeof error === 'string') error = new Error(error)
     const apiError = processError(error as Error)
     setErrorMessage(apiError)
+    setIsErrored(true)
   }
 
-  return { error: errorMessage, setError, resetError }
+  return { error: errorMessage, isErrored, setError, resetError }
 }
 
 export { setErrorProcessor }

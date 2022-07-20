@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import useError, { UseErrorOptions } from './useError'
+import useIndicators from './useIndicators'
 
 export interface UseActionHandlerOptions extends UseErrorOptions {
   isRetryAllowed?: boolean
@@ -10,6 +11,8 @@ interface UseActionHandlerHookBase {
   reset(): void
   error: string
   isLoading: boolean
+  isErrored: boolean
+  indicators: ReturnType<typeof useIndicators>
 }
 
 export type AsyncAction<ActionResult, ActionParams = undefined> = {
@@ -45,13 +48,16 @@ function useAsyncHandler<ActionResult, Param>(
 // todo test if it make sense to merge useState into one object.
 function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
   const { isRetryAllowed, strict } = options || {}
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDone, setIsDone] = useState(false)
+  const indicators = useIndicators()
+  const { isLoading, isDone } = indicators.state
+
   const [data, setData] = useState<unknown>(null)
-  const { error, setError } = useError(options)
+  const { error, setError, isErrored } = useError(options)
 
   const handleAction = useCallback(
     async (actionParam?: any) => {
+      const { isLoading, isDone } = indicators.stateRef.current
+
       if (isDone && !isRetryAllowed && strict) {
         console.warn('Action is blocked because isDone is true. Async action is ignored. Possible leak detected.')
         return null
@@ -61,43 +67,52 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
         return null
       }
       try {
-        setIsLoading(true)
-        if (error) setError('')
+        indicators.set({
+          isLoading: true,
+        })
+        if (isErrored) setError(null)
 
         const result = await onAction(actionParam)
         setData(result)
-        setIsDone(true)
-        setIsLoading(false)
+        indicators.set({
+          isDone: true,
+          isLoading: false,
+        })
         return result
       } catch (e) {
         setError(e)
-        setIsLoading(false)
+        indicators.set({
+          isLoading: false,
+        })
       }
     },
-    [isDone, error, isLoading, onAction, isRetryAllowed, strict],
+    [indicators, isErrored, onAction, isRetryAllowed, strict],
   )
 
   const reset = useCallback(
     function resetFn() {
-      if (isLoading) {
+      const latestState = indicators.stateRef.current
+      if (latestState.isLoading) {
         // why it is not firing? Even if loading is true already
         console.warn('You are using .reset() during active action. Some data can be overwritten')
       }
-      setIsDone(false)
-      setIsLoading(false)
+
+      indicators.reset()
       setError(null)
       setData(null)
     },
-    [isLoading],
+    [indicators],
   )
 
   return {
     execute: handleAction,
     isLoading,
     isDone,
+    isErrored,
     error,
     reset,
     data,
+    indicators,
   }
 }
 

@@ -1,4 +1,5 @@
-import { DependencyList, useCallback, useEffect, useState } from 'react'
+import { DependencyList, useCallback, useEffect } from 'react'
+import useState from 'react-usestateref'
 import { useTimeout } from 'usehooks-ts'
 import useAsyncHandler, { UseActionHandlerHookData } from './useAsyncHandler'
 
@@ -35,18 +36,21 @@ function useAsyncFetch<DataResult>(
   }
 
   const { maxTries = 1, timeoutBeforeRetry = 1000 } = options || {}
-  const [tries, setTries] = useState(0)
+  const [tries, setTries, triesRef] = useState(0)
+  const [isTimeoutEnabled, setTimeoutEnabled] = useState(false)
   const action = useAsyncHandler(onActionFn, { strict: true })
-  const { isLoading, isDone, error, data } = action
+  const { isLoading, isDone, isErrored, error, data, indicators } = action
 
   const handleTry = useCallback(
     function handleTryFn() {
+      const { isLoading, isDone } = indicators.stateRef.current
+      const tries = triesRef.current || 0
       if (isDone || isLoading) return
-      if (tries >= maxTries) return
+
       setTries(tries + 1)
       action.execute()
     },
-    [action, tries],
+    [action],
   )
 
   function reset() {
@@ -59,11 +63,23 @@ function useAsyncFetch<DataResult>(
     handleTry()
   }, dependencies || [])
 
-  const isTimeoutEnabled = tries && tries < maxTries && !isLoading && !isDone
+  const isFetchNecessary = !isLoading && !isDone
+  useEffect(() => {
+    if (isTimeoutEnabled) return
+    if (!isFetchNecessary) return
+    if (!tries || tries >= maxTries) return
 
-  useTimeout(handleTry, isTimeoutEnabled ? timeoutBeforeRetry : null)
+    setTimeoutEnabled(true)
+  }, [isFetchNecessary, tries])
 
-  return { isLoading, isDone, error, data, reset, tries }
+  function handleTimeout() {
+    setTimeoutEnabled(false)
+    handleTry()
+  }
+
+  useTimeout(handleTimeout, isTimeoutEnabled ? timeoutBeforeRetry : null)
+
+  return { isLoading, isDone, isErrored, error, data, reset, tries, indicators }
 }
 
 export default useAsyncFetch
