@@ -1,2 +1,5 @@
 doc
 .idea
+.editorconfig
+.eslintrc
+**/*.ts
