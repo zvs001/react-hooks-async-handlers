@@ -15,6 +15,7 @@ or
 
 - [useAsyncHandler](#useasynchandler)
 - [useAsyncFetch](#useasyncfetch)
+- [useAsyncIntervalFetch](#useasyncintervalfetch)
 
 
 ## Usage
@@ -80,6 +81,23 @@ useFetch(async () => {
   maxTries: 4, timeoutBeforeRetry: 1000 
 })
 ```
+
+### useAsyncIntervalFetch
+
+Hook is a wrapper for `useAsyncFetch` hook.
+This hook runs action automatically, when component mounts and runs it again with specified interval.
+
+Example of use with retry:
+
+```typescript
+useAsyncIntervalFetch(
+  async () => {
+    await api.getPageObject()
+  },
+  30000
+)
+```
+
 
 ## Advanced usage 
 
