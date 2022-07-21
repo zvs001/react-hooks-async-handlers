@@ -3,3 +3,4 @@ doc
 .editorconfig
 .eslintrc
 **/*.ts
+!**/*.d.ts
