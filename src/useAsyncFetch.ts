@@ -49,6 +49,11 @@ function useAsyncFetch<DataResult>(
 
       setTries(tries + 1)
       action.execute()
+        .catch(e => {
+          let actionPrefix = onActionFn.name ? `(${onActionFn.name}) ` : ''
+          console.error(`${actionPrefix}AsyncFetch action got error:`)
+          console.error(e)
+        })
     },
     [action],
   )

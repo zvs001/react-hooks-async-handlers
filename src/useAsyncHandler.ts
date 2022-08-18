@@ -80,13 +80,11 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
         })
         return result
       } catch (e) {
-        let actionPrefix = onAction.name ? `(${onAction.name}) ` : ''
-        console.error(`${actionPrefix}AsyncHandler action got error:`)
-        console.error(e)
         setError(e)
         indicators.set({
           isLoading: false,
         })
+        throw e // executor fn should be able to stop function, because of error
       }
     },
     [indicators, isErrored, onAction, isRetryAllowed, strict],
