@@ -1,6 +1,7 @@
 {
   "extends": "module-kit/tsconfig",
   "compilerOptions": {
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "lib": ["dom", "ES2015"]
   }
 }
