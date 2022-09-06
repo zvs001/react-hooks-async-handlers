@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
-import useError, { UseErrorOptions } from './useError'
+import { useError } from 'react-hooks-use-error'
+import { UseErrorOptions } from "react-hooks-use-error/useError"
 import useIndicators from './useIndicators'
 
 export interface UseActionHandlerOptions extends UseErrorOptions {
@@ -45,7 +46,6 @@ function useAsyncHandler<ActionResult, Param>(
   execute: typeof onAction
 } & UseActionHandlerHookData<ActionResult>
 
-// todo test if it make sense to merge useState into one object.
 function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
   const { isRetryAllowed, strict } = options || {}
   const indicators = useIndicators()
