@@ -1,6 +1,6 @@
 {
   "name": "react-hooks-async-handlers",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index",
   "types": "./index.d.ts",
   "scripts": {
@@ -21,7 +21,7 @@
   "dependencies": {
     "react-hooks-use-error": "^0.0.1",
     "react-usestateref": "^1.0.8",
-    "usehooks-ts": "^2.6.0"
+    "usehooks-ts": "~2.5.4"
   },
   "devDependencies": {
     "@types/react": "^18.0.18",
