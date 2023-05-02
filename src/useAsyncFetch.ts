@@ -3,7 +3,10 @@ import useState from 'react-usestateref'
 import { useTimeout } from 'usehooks-ts'
 import useAsyncHandler, { UseActionHandlerHookData } from './useAsyncHandler'
 
-export type FetchAction<DataResult> = Omit<UseActionHandlerHookData<DataResult>, 'onAction'> & { tries: number, isInRetryTimeout: boolean }
+export type FetchAction<DataResult> = Omit<UseActionHandlerHookData<DataResult>, 'onAction'> & {
+  tries: number
+  isInRetryTimeout: boolean
+}
 export interface FetchActionOptions {
   maxTries?: number
   timeoutBeforeRetry?: number
@@ -34,14 +37,18 @@ function useAsyncFetch<DataResult>(
     dependencies = options
     options = {}
   }
-  if(!dependencies) dependencies = []
+  if (!dependencies) dependencies = []
 
   useEffect(() => {
-    dependencies.forEach(dep => {
-      if(dep && typeof dep === 'object') {
-        console.warn('[useAsyncFetch]', 'Try to avoid using objects in dependencies. It might cause recursive runs. Prefer primitive types.')
-      }
-    })
+    if (dependencies)
+      dependencies.forEach((dep) => {
+        if (dep && typeof dep === 'object') {
+          console.warn(
+            '[useAsyncFetch]',
+            'Try to avoid using objects in dependencies. It might cause recursive runs. Prefer primitive types.',
+          )
+        }
+      })
   }, dependencies)
 
   const { maxTries = 1, timeoutBeforeRetry = 1000 } = options || {}
@@ -57,12 +64,11 @@ function useAsyncFetch<DataResult>(
       if (isDone || isLoading) return
 
       setTries(tries + 1)
-      action.execute()
-        .catch(e => {
-          let actionPrefix = onActionFn.name ? `(${onActionFn.name}) ` : ''
-          console.error(`${actionPrefix}AsyncFetch action got error:`)
-          console.error(e)
-        })
+      action.execute().catch((e) => {
+        let actionPrefix = onActionFn.name ? `(${onActionFn.name}) ` : ''
+        console.error(`${actionPrefix}AsyncFetch action got error:`)
+        console.error(e)
+      })
     },
     [action],
   )
