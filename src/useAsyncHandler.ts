@@ -72,7 +72,16 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
         })
         if (isErrored) setError(null)
 
-        const result = await onAction(actionParam)
+        const fnPromise = onAction(actionParam)
+        if(!(fnPromise instanceof Promise)) {
+          let actionPrefix = onAction.name ? `(${onAction.name}) ` : ''
+          console.warn('[react-hooks-async-handlers]:' + actionPrefix,
+            'Provided function didn\'t return promise.',
+            'So function have nothing to wait and indicators are switched automatically',
+            'Did you forget to return promise?'
+          )
+        }
+        const result = await fnPromise
         setData(result)
         indicators.set({
           isDone: true,

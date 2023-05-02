@@ -34,6 +34,15 @@ function useAsyncFetch<DataResult>(
     dependencies = options
     options = {}
   }
+  if(!dependencies) dependencies = []
+
+  useEffect(() => {
+    dependencies.forEach(dep => {
+      if(dep && typeof dep === 'object') {
+        console.warn('[useAsyncFetch]', 'Try to avoid using objects in dependencies. It might cause recursive runs. Prefer primitive types.')
+      }
+    })
+  }, dependencies)
 
   const { maxTries = 1, timeoutBeforeRetry = 1000 } = options || {}
   const [tries, setTries, triesRef] = useState(0)
@@ -66,7 +75,7 @@ function useAsyncFetch<DataResult>(
 
   useEffect(() => {
     reset()
-  }, dependencies || [])
+  }, dependencies)
 
   const isFetchNecessary = !isLoading && !isDone
   useEffect(() => {
