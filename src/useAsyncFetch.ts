@@ -3,7 +3,7 @@ import useState from 'react-usestateref'
 import { useTimeout } from 'usehooks-ts'
 import useAsyncHandler, { UseActionHandlerHookData } from './useAsyncHandler'
 
-export type FetchAction<DataResult> = Omit<UseActionHandlerHookData<DataResult>, 'onAction'> & { tries: number }
+export type FetchAction<DataResult> = Omit<UseActionHandlerHookData<DataResult>, 'onAction'> & { tries: number, isInRetryTimeout: boolean }
 export interface FetchActionOptions {
   maxTries?: number
   timeoutBeforeRetry?: number
@@ -37,7 +37,7 @@ function useAsyncFetch<DataResult>(
 
   const { maxTries = 1, timeoutBeforeRetry = 1000 } = options || {}
   const [tries, setTries, triesRef] = useState(0)
-  const [isTimeoutEnabled, setTimeoutEnabled] = useState(false)
+  const [isInRetryTimeout, setRetryTimeoutEnabled] = useState(false)
   const action = useAsyncHandler(onActionFn, { strict: true })
   const { isLoading, isDone, isErrored, error, data, indicators } = action
 
@@ -61,30 +61,30 @@ function useAsyncFetch<DataResult>(
   function reset() {
     action.reset()
     setTries(0)
+    handleTry()
   }
 
   useEffect(() => {
     reset()
-    handleTry()
   }, dependencies || [])
 
   const isFetchNecessary = !isLoading && !isDone
   useEffect(() => {
-    if (isTimeoutEnabled) return
+    if (isInRetryTimeout) return
     if (!isFetchNecessary) return
     if (!tries || tries >= maxTries) return
 
-    setTimeoutEnabled(true)
+    setRetryTimeoutEnabled(true)
   }, [isFetchNecessary, tries])
 
   function handleTimeout() {
-    setTimeoutEnabled(false)
+    setRetryTimeoutEnabled(false)
     handleTry()
   }
 
-  useTimeout(handleTimeout, isTimeoutEnabled ? timeoutBeforeRetry : null)
+  useTimeout(handleTimeout, isInRetryTimeout ? timeoutBeforeRetry : null)
 
-  return { isLoading, isDone, isErrored, error, data, reset, tries, indicators }
+  return { isLoading, isDone, isErrored, isInRetryTimeout, error, data, reset, tries, indicators }
 }
 
 export default useAsyncFetch
