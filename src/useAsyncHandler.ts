@@ -67,10 +67,12 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
         return null
       }
       try {
+        indicators.reset()
+        if (isErrored) setError(null)
+
         indicators.set({
           isLoading: true,
         })
-        if (isErrored) setError(null)
 
         const fnPromise = onAction(actionParam)
         if(!(fnPromise instanceof Promise)) {

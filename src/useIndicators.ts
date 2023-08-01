@@ -21,10 +21,10 @@ function useIndicators() {
   }
 
   function setIndicators(data: Partial<AsyncHookIndicatorsDefault>) {
-    setObject({
-      ...state,
+    setObject(statePrev => ({
+      ...statePrev,
       ...data,
-    })
+    }))
   }
 
   return {
