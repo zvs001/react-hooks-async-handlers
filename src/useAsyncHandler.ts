@@ -6,6 +6,9 @@ import useIndicators from './useIndicators'
 export interface UseActionHandlerOptions extends UseErrorOptions {
   isRetryAllowed?: boolean
   strict?: boolean
+  onStart?(): any
+  onSuccess?(data?: any): any
+  onError?(error: Error): any
 }
 
 interface UseActionHandlerHookBase {
@@ -47,7 +50,7 @@ function useAsyncHandler<ActionResult, Param>(
 } & UseActionHandlerHookData<ActionResult>
 
 function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
-  const { isRetryAllowed, strict } = options || {}
+  const { isRetryAllowed, strict, onStart, onSuccess, onError } = options || {}
   const indicators = useIndicators()
   const { isLoading, isDone } = indicators.state
 
@@ -70,6 +73,10 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
         indicators.reset()
         if (isErrored) setError(null)
 
+        if(onStart) {
+          onStart()
+        }
+
         indicators.set({
           isLoading: true,
         })
@@ -89,12 +96,19 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
           isDone: true,
           isLoading: false,
         })
+
+        if(onSuccess) {
+          onSuccess()
+        }
         return result
       } catch (e) {
         setError(e)
         indicators.set({
           isLoading: false,
         })
+        if(onError){
+          onError(e)
+        }
         throw e // executor fn should be able to stop function, because of error
       }
     },
