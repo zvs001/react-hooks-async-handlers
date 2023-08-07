@@ -21,6 +21,7 @@
   "dependencies": {
     "react-hooks-use-error": "^0.0.1",
     "react-usestateref": "^1.0.8",
+    "shallow-equal": "^3.1.0",
     "usehooks-ts": "~2.5.4"
   },
   "devDependencies": {

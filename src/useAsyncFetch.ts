@@ -1,7 +1,8 @@
-import { DependencyList, useCallback, useEffect } from 'react'
+import { DependencyList, useCallback, useEffect, useRef } from 'react'
 import useState from 'react-usestateref'
 import { useTimeout } from 'usehooks-ts'
 import useAsyncHandler, { UseActionHandlerHookData } from './useAsyncHandler'
+import { shallowEqualArrays } from "shallow-equal"
 
 export type FetchAction<DataResult> = Omit<UseActionHandlerHookData<DataResult>, 'onAction'> & {
   tries: number
@@ -56,12 +57,14 @@ function useAsyncFetch<DataResult>(
   const [isInRetryTimeout, setRetryTimeoutEnabled] = useState(false)
   const action = useAsyncHandler(onActionFn, { strict: true })
   const { isLoading, isDone, isErrored, error, data, indicators } = action
+  const depsPrevRef = useRef<DependencyList>()
 
   const handleTry = useCallback(
     function handleTryFn() {
       const { isLoading, isDone } = indicators.stateRef.current
       const tries = triesRef.current || 0
       if (isDone || isLoading) return
+      depsPrevRef.current = dependencies
 
       setTries(tries + 1)
       action.execute().catch((e) => {
@@ -80,8 +83,13 @@ function useAsyncFetch<DataResult>(
   }
 
   useEffect(() => {
+    const isEqual = depsPrevRef.current ? shallowEqualArrays(depsPrevRef.current as any, dependencies as any) : false
+    if(isLoading || isEqual) {
+      return
+    }
+
     reset()
-  }, dependencies)
+  }, [isLoading, ...dependencies])
 
   const isFetchNecessary = !isLoading && !isDone
   useEffect(() => {

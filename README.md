@@ -72,6 +72,10 @@ return <div onClick={execute}>click</div>
 Hook is a wrapper for `useAsyncHandler` hook. 
 This hook runs action automatically, when component mounts and allows to retry an action if it fails.
 
+Action will be executed automatically similar to useEffect(), 
+buf if there is active action in progress, execution will be ignored. 
+Once action will be finished only the last one will be emitted again.
+
 Example of use with retry: 
 
 ```typescript
