@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import useState from 'react-usestateref'
 
 interface AsyncHookIndicatorsDefault {
@@ -21,18 +22,21 @@ function useIndicators() {
   }
 
   function setIndicators(data: Partial<AsyncHookIndicatorsDefault>) {
-    setObject(statePrev => ({
+    setObject((statePrev) => ({
       ...statePrev,
       ...data,
     }))
   }
 
-  return {
-    state,
-    stateRef,
-    set: setIndicators,
-    reset: resetIndicators,
-  }
+  return useMemo(
+    () => ({
+      state,
+      stateRef,
+      set: setIndicators,
+      reset: resetIndicators,
+    }),
+    [state],
+  )
 }
 
 export default useIndicators

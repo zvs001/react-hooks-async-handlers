@@ -1,8 +1,9 @@
-import { DependencyList, useCallback, useEffect, useRef } from 'react'
+import { DependencyList, useEffect, useMemo, useRef } from 'react'
 import useState from 'react-usestateref'
+import { shallowEqualArrays } from 'shallow-equal'
+import useLatestCallback from 'use-latest-callback'
 import { useTimeout } from 'usehooks-ts'
 import useAsyncHandler, { UseActionHandlerHookData } from './useAsyncHandler'
-import { shallowEqualArrays } from "shallow-equal"
 
 export type FetchAction<DataResult> = Omit<UseActionHandlerHookData<DataResult>, 'onAction'> & {
   tries: number
@@ -55,36 +56,33 @@ function useAsyncFetch<DataResult>(
   const { maxTries = 1, timeoutBeforeRetry = 1000 } = options || {}
   const [tries, setTries, triesRef] = useState(0)
   const [isInRetryTimeout, setRetryTimeoutEnabled] = useState(false)
-  const action = useAsyncHandler(onActionFn, { strict: true })
-  const { isLoading, isDone, isErrored, error, data, indicators } = action
+  const asyncAction = useAsyncHandler(onActionFn, { strict: true })
+  const { isLoading, isDone, isErrored, error, data, indicators } = asyncAction
   const depsPrevRef = useRef<DependencyList>()
 
-  const handleTry = useCallback(
-    function handleTryFn() {
-      const { isLoading, isDone } = indicators.stateRef.current
-      const tries = triesRef.current || 0
-      if (isDone || isLoading) return
-      depsPrevRef.current = dependencies
+  const handleTry = useLatestCallback(function handleTryFn() {
+    const { isLoading, isDone } = indicators.stateRef.current
+    const tries = triesRef.current || 0
+    if (isDone || isLoading) return
+    depsPrevRef.current = dependencies
 
-      setTries(tries + 1)
-      action.execute().catch((e) => {
-        let actionPrefix = onActionFn.name ? `(${onActionFn.name}) ` : ''
-        console.error(`${actionPrefix}AsyncFetch action got error:`)
-        console.error(e)
-      })
-    },
-    [action],
-  )
+    setTries(tries + 1)
+    asyncAction.execute().catch((e) => {
+      let actionPrefix = onActionFn.name ? `(${onActionFn.name}) ` : ''
+      console.error(`${actionPrefix}AsyncFetch action got error:`)
+      console.error(e)
+    })
+  })
 
-  function reset() {
-    action.reset()
+  const reset = useLatestCallback(function resetFn() {
+    asyncAction.reset()
     setTries(0)
     handleTry()
-  }
+  })
 
   useEffect(() => {
     const isEqual = depsPrevRef.current ? shallowEqualArrays(depsPrevRef.current as any, dependencies as any) : false
-    if(isLoading || isEqual) {
+    if (isLoading || isEqual) {
       return
     }
 
@@ -107,7 +105,20 @@ function useAsyncFetch<DataResult>(
 
   useTimeout(handleTimeout, isInRetryTimeout ? timeoutBeforeRetry : null)
 
-  return { isLoading, isDone, isErrored, isInRetryTimeout, error, data, reset, tries, indicators }
+  return useMemo(
+    () => ({
+      isLoading,
+      isDone,
+      isErrored,
+      isInRetryTimeout,
+      error,
+      data,
+      reset,
+      tries,
+      indicators,
+    }),
+    [asyncAction, isInRetryTimeout, tries],
+  )
 }
 
 export default useAsyncFetch

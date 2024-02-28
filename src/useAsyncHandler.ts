@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useError } from 'react-hooks-use-error'
-import { UseErrorOptions } from "react-hooks-use-error/useError"
+import { UseErrorOptions } from 'react-hooks-use-error/useError'
+import useLatestCallback from 'use-latest-callback'
 import useIndicators from './useIndicators'
 
 export interface UseActionHandlerOptions extends UseErrorOptions {
@@ -57,89 +58,93 @@ function useAsyncHandler(onAction: any, options?: UseActionHandlerOptions) {
   const [data, setData] = useState<unknown>(null)
   const { error, setError, isErrored } = useError(options)
 
-  const handleAction = useCallback(
-    async (actionParam?: any) => {
-      const { isLoading, isDone } = indicators.stateRef.current
+  const handleAction = useLatestCallback(async (actionParam?: any) => {
+    const { isLoading, isDone } = indicators.stateRef.current
 
-      if (isDone && !isRetryAllowed && strict) {
-        console.warn('Action is blocked because isDone is true. Async action is ignored. Possible leak detected.')
-        return null
-      }
-      if (isLoading) {
-        console.warn('action is loading already. Ignore rerunning actions.')
-        return null
-      }
-      try {
-        indicators.reset()
-        if (isErrored) setError(null)
-
-        if(onStart) {
-          onStart()
-        }
-
-        indicators.set({
-          isLoading: true,
-        })
-
-        const fnPromise = onAction(actionParam)
-        if(!(fnPromise instanceof Promise)) {
-          let actionPrefix = onAction.name ? `(${onAction.name}) ` : ''
-          console.warn('[react-hooks-async-handlers]:' + actionPrefix,
-            'Provided function didn\'t return promise.',
-            'So function have nothing to wait and indicators are switched automatically',
-            'Did you forget to return promise?'
-          )
-        }
-        const result = await fnPromise
-        setData(result)
-        indicators.set({
-          isDone: true,
-          isLoading: false,
-        })
-
-        if(onSuccess) {
-          onSuccess()
-        }
-        return result
-      } catch (e) {
-        setError(e)
-        indicators.set({
-          isLoading: false,
-        })
-        if(onError){
-          onError(e)
-        }
-        throw e // executor fn should be able to stop function, because of error
-      }
-    },
-    [indicators, isErrored, onAction, isRetryAllowed, strict],
-  )
-
-  const reset = useCallback(
-    function resetFn() {
-      const latestState = indicators.stateRef.current
-      if (latestState.isLoading) {
-        // why it is not firing? Even if loading is true already
-        console.warn('You are using .reset() during active action. Some data can be overwritten')
-      }
-
+    if (isDone && !isRetryAllowed && strict) {
+      console.warn('Action is blocked because isDone is true. Async action is ignored. Possible leak detected.')
+      return null
+    }
+    if (isLoading) {
+      console.warn('action is loading already. Ignore rerunning actions.')
+      return null
+    }
+    try {
       indicators.reset()
-      setError(null)
-      setData(null)
-    },
-    [indicators],
+      if (isErrored) setError(null)
+
+      if (onStart) {
+        onStart()
+      }
+
+      indicators.set({
+        isLoading: true,
+      })
+
+      const fnPromise = onAction(actionParam)
+      if (!(fnPromise instanceof Promise)) {
+        let actionPrefix = onAction.name ? `(${onAction.name}) ` : ''
+        console.warn(
+          `[react-hooks-async-handlers]:${actionPrefix}`,
+          "Provided function didn't return promise.",
+          'So function have nothing to wait and indicators are switched automatically',
+          'Did you forget to return promise?',
+        )
+      }
+      const result = await fnPromise
+      setData(result)
+      indicators.set({
+        isDone: true,
+        isLoading: false,
+      })
+
+      if (onSuccess) {
+        onSuccess()
+      }
+      return result
+    } catch (e) {
+      setError(e)
+      indicators.set({
+        isLoading: false,
+      })
+      if (onError) {
+        onError(e)
+      }
+      throw e // executor fn should be able to stop function, because of error
+    }
+  })
+
+  const reset = useLatestCallback(function resetFn() {
+    const latestState = indicators.stateRef.current
+    if (latestState.isLoading) {
+      // why it is not firing? Even if loading is true already
+      console.warn('You are using .reset() during active action. Some data can be overwritten')
+    }
+
+    indicators.reset()
+    setError(null)
+    setData(null)
+  })
+
+  const actionMemoized = useMemo(
+    () => ({
+      // functions doesn't require refresh
+      execute: handleAction,
+      reset,
+
+      // these states are from indicators
+      isLoading,
+      isDone,
+
+      isErrored,
+      error,
+      data,
+      indicators,
+    }),
+    [indicators, isErrored, error, data],
   )
 
-  return {
-    execute: handleAction,
-    isLoading,
-    isDone,
-    isErrored,
-    error,
-    reset,
-    data,
-    indicators,
-  }
+  return actionMemoized
 }
 
 export default useAsyncHandler
